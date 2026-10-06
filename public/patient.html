@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Patient Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f9; }
+    .card { background: white; padding: 20px; max-width: 500px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    select, input, button { width: 100%; padding: 10px; margin: 10px 0; }
+    button { background: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Book an Appointment</h1>
+    
+    <label>Select Doctor:</label>
+    <select id="doctorSelect">
+      <option value="">Loading doctors...</option>
+    </select>
+
+    <label>Appointment Date:</label>
+    <input type="date" id="appDate" required />
+
+    <label>Time Slot:</label>
+    <select id="timeSlot">
+      <option value="09:00 AM - 09:30 AM">09:00 AM - 09:30 AM</option>
+      <option value="10:00 AM - 10:30 AM">10:00 AM - 10:30 AM</option>
+      <option value="02:00 PM - 02:30 PM">02:00 PM - 02:30 PM</option>
+      <option value="04:00 PM - 04:30 PM">04:00 PM - 04:30 PM</option>
+    </select>
+
+    <button onclick="bookAppointment()">Confirm & Pay</button>
+    <button onclick="logout()" style="background: #dc3545;">Logout</button>
+  </div>
+
+  <script>
+    // Fetch active doctors automatically on page load
+    async function loadDoctors() {
+      const res = await fetch('/api/public/doctors');
+      const data = await res.json();
+      const select = document.getElementById('doctorSelect');
+      select.innerHTML = '';
+
+      if (data.doctors.length === 0) {
+        select.innerHTML = '<option value="">No approved doctors available</option>';
+        return;
+      }
+
+      data.doctors.forEach(doc => {
+        select.innerHTML += `<option value="${doc.doctor_id}">${doc.full_name} (${doc.specialization}) - ₹${doc.consultation_fee}</option>`;
+      });
+    }
+
+    async function bookAppointment() {
+      const doctor_id = document.getElementById('doctorSelect').value;
+      const appointment_date = document.getElementById('appDate').value;
+      const time_slot = document.getElementById('timeSlot').value;
+      const token = localStorage.getItem('token');
+
+      const res = await fetch('/api/appointments/book', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ doctor_id, appointment_date, time_slot })
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = '/index.html';
+    }
+
+    loadDoctors();
+  </script>
+</body>
+</html>

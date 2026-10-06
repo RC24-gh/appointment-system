@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+</head>
+<body style="font-family: Arial, sans-serif; padding: 30px;">
+  <h1>Admin Dashboard</h1>
+  <button onclick="loadDoctors()">View All Doctors</button>
+  <button onclick="logout()">Logout</button>
+  <div id="output" style="margin-top: 20px;"></div>
+
+  <script>
+    async function loadDoctors() {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/admin/doctors', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      document.getElementById('output').innerText = JSON.stringify(data, null, 2);
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = '/index.html';
+    }
+  </script>
+</body>
+</html>

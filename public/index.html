@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Appointment System - Login & Register</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f9; }
+    .card { background: white; padding: 20px; max-width: 450px; margin: 20px auto; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    input, select, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
+    button { background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
+    .doctor-fields { display: none; background: #eef7ff; padding: 10px; border-radius: 4px; margin-top: 5px; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Register</h2>
+    <input type="text" id="regName" placeholder="Full Name" required />
+    <input type="email" id="regEmail" placeholder="Email Address" required />
+    <input type="password" id="regPassword" placeholder="Password" required />
+    <input type="text" id="regPhone" placeholder="Phone Number" />
+    
+    <select id="regRole" onchange="toggleDoctorFields()">
+      <option value="PATIENT">Patient</option>
+      <option value="DOCTOR">Doctor</option>
+      <option value="ADMIN">Admin</option>
+    </select>
+
+    <!-- Specific fields shown only when DOCTOR role is selected -->
+    <div id="doctorFields" class="doctor-fields">
+      <input type="text" id="regSpec" placeholder="Specialization (e.g. Cardiology)" />
+      <input type="number" id="regFee" placeholder="Consultation Fee (₹)" />
+    </div>
+
+    <button onclick="register()">Create Account</button>
+  </div>
+
+  <div class="card">
+    <h2>Login</h2>
+    <input type="email" id="loginEmail" placeholder="Email Address" required />
+    <input type="password" id="loginPassword" placeholder="Password" required />
+    <button onclick="login()">Sign In</button>
+  </div>
+
+  <script>
+    function toggleDoctorFields() {
+      const role = document.getElementById('regRole').value;
+      document.getElementById('doctorFields').style.display = (role === 'DOCTOR') ? 'block' : 'none';
+    }
+
+    async function register() {
+      const body = {
+        full_name: document.getElementById('regName').value,
+        email: document.getElementById('regEmail').value,
+        password: document.getElementById('regPassword').value,
+        phone: document.getElementById('regPhone').value,
+        role: document.getElementById('regRole').value,
+        specialization: document.getElementById('regSpec').value,
+        consultation_fee: parseFloat(document.getElementById('regFee').value) || 100
+      };
+
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+    }
+
+    async function login() {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        if (data.role === 'PATIENT') window.location.href = '/patient.html';
+        else if (data.role === 'DOCTOR') window.location.href = '/doctor.html';
+        else if (data.role === 'ADMIN') window.location.href = '/admin.html';
+      } else {
+        alert(data.message || 'Login failed');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Doctor Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f9; }
+    .container { background: white; padding: 25px; border-radius: 8px; max-width: 800px; margin: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+    th { background-color: #007bff; color: white; }
+    .badge { padding: 5px 10px; border-radius: 4px; font-weight: bold; }
+    .earning-card { background: #e3f2fd; padding: 15px; border-radius: 6px; font-size: 1.2rem; margin-bottom: 20px; font-weight: bold; }
+    button { padding: 6px 12px; background: #dc3545; color: white; border: none; cursor: pointer; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Doctor Dashboard</h1>
+    <div class="earning-card">Total Earnings: ₹<span id="totalEarnings">0</span></div>
+    
+    <h3>Assigned Appointments</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Patient</th>
+          <th>Date</th>
+          <th>Time Slot</th>
+          <th>Fee Paid</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="appointmentTable">
+        <tr><td colspan="6">Loading...</td></tr>
+      </tbody>
+    </table>
+    <br/>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <script>
+    async function loadDashboard() {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/doctor/dashboard', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      document.getElementById('totalEarnings').innerText = data.totalEarnings || 0;
+      const tbody = document.getElementById('appointmentTable');
+      tbody.innerHTML = '';
+
+      if (!data.appointments || data.appointments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6">No appointments found.</td></tr>';
+        return;
+      }
+
+      data.appointments.forEach(app => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${app.patient_name}</td>
+            <td>${app.appointment_date}</td>
+            <td>${app.time_slot}</td>
+            <td>₹${app.amount}</td>
+            <td><b>${app.status}</b></td>
+            <td>
+              <select onchange="updateStatus(${app.appointment_id}, this.value)">
+                <option value="PENDING" ${app.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
+                <option value="CONFIRMED" ${app.status === 'CONFIRMED' ? 'selected' : ''}>CONFIRMED</option>
+                <option value="COMPLETED" ${app.status === 'COMPLETED' ? 'selected' : ''}>COMPLETED</option>
+                <option value="CANCELLED" ${app.status === 'CANCELLED' ? 'selected' : ''}>CANCELLED</option>
+              </select>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    async function updateStatus(appointment_id, newStatus) {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/doctor/appointment/status', {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ appointment_id, status: newStatus })
+      });
+      const data = await res.json();
+      alert(data.message);
+      loadDashboard();
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = '/index.html';
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>
